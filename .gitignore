@@ -1,0 +1,7 @@
+*.env
+.env.local
+.env.*
+Set-*-Env.bat
+__pycache__
+__pycache__/*
+deploy.zip

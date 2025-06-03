@@ -1,0 +1,14 @@
+﻿{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Open Browser",
+            "type": "shell",
+            "command": "cmd",
+            "args": ["/c", "start http://127.0.0.1:5000"],
+            "presentation": {
+                "reveal": "never"
+            }
+        }
+    ]
+}

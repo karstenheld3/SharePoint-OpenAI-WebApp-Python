@@ -1,0 +1,23 @@
+# Use OpenAI = 'openai', or Azure OpenAI = 'azure_openai'
+OPENAI_SERVICE_TYPE=azure_openai
+
+# Azure OpenAI key authentication. If 'false', then managed identity or service principal authentication will be used.
+AZURE_OPENAI_USE_KEY_AUTHENTICATION=true
+
+AZURE_OPENAI_ENDPOINT=https://my-ai-service-28743269652.openai.azure.com/
+AZURE_OPENAI_API_KEY=xxxxxxxxxxxxxxxxxxxxxx
+AZURE_TENANT_ID=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+AZURE_CLIENT_ID=bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb
+AZURE_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxx
+AZURE_OPENAI_MODEL_DEPLOYMENT_NAME=gpt-4o-mini
+AZURE_OPENAI_API_VERSION=2025-04-01-preview
+
+# Azure Deployment
+AZURE_SUBSCRIPTION_ID=cccccccc-cccc-cccc-cccc-cccccccccccc
+AZURE_RESOURCE_GROUP=my-resourcegroup-2342934563
+AZURE_LOCATION=swedencentral
+AZURE_APP_NAME=my-webapp-934238764295
+AZURE_PYTHON_VERSION=3.11
+AZURE_APP_SERVICE_PLAN=appservice-plan
+
+
