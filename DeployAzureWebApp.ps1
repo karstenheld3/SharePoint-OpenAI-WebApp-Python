@@ -165,7 +165,7 @@ Write-Host "Deploying application..."
 $retVal = az webapp deploy --resource-group $config.AZURE_RESOURCE_GROUP --name $config.AZURE_APP_NAME --src-path $zipPath --type zip
 
 Write-Host "Deleting '$zipPath'..."
-If (Test-Path "$PSScriptRoot\$deployZipFilename") { Remove-Item "$PSScriptRoot\$deployZipFilename" -Force }
+if (Test-Path "$PSScriptRoot\$deployZipFilename") { Remove-Item "$PSScriptRoot\$deployZipFilename" -Force }
 
 # https://learn.microsoft.com/en-us/cli/azure/webapp/log?view=azure-cli-latest
 # az webapp log tail --name $config.AZURE_APP_NAME --resource-group $config.AZURE_RESOURCE_GROUP
