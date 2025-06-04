@@ -103,7 +103,8 @@ def retry_on_openai_errors(fn, indentation=0, retries=5, backoff_seconds=10):
       print(f"{' '*indentation}Rate limit reached, retrying in {backoff_seconds} seconds... (attempt {attempt + 2} of {retries})")
       time.sleep(backoff_seconds)
 
-# Uses the file_search tool to get search results from a vector store
+# Uses the file_search tool of the Responses API to get search results from a vector store
+# Why? As of 2025-06-04, Azure Open AI Services does not support the Séarch API the OpenAI Python SDK.
 def get_search_results_using_responses(client, model, query, vector_store_id, max_num_results, temperature, max_output_tokens) -> tuple[List[CoaiSearchResponse], any]:
   params = CoaiResponseParams(
     model=model
