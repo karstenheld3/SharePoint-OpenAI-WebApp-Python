@@ -120,11 +120,16 @@ def search():
   # Get query parameters
   query = request.args.get('query')
   vsid = request.args.get('vsid')
+  format = request.args.get('format', 'html')
   
   if not query:
-    return jsonify({"error": "Missing 'query' parameter"}), 400, {'Content-Type': 'application/json'}
+    message = "Missing 'query' parameter"
+    if format == 'json': return jsonify({"error": message}), 400, {'Content-Type': 'application/json'}
+    else: return message, 400, {'Content-Type': 'text/plain'}
   if not vsid:
-    return jsonify({"error": "Missing 'vsid' (vector store id) parameter"}), 400, {'Content-Type': 'application/json'}
+    message = "Missing 'vsid' (vector store id) parameter"
+    if format == 'json': return jsonify({"error": message}), 400, {'Content-Type': 'application/json'}
+    else: return message, 400, {'Content-Type': 'text/plain'}
 
   print(f"  Query: {truncate_string(query,80)}")
 
@@ -138,6 +143,7 @@ def search():
     output_text = response.output_text
     response_file_search_tool_call = next((item for item in response.output if item.type == 'file_search_call'), None)
     search_results = getattr(response_file_search_tool_call, 'results', None)
+    
 
     print(f"  Response: {truncate_string(response.output_text,80)}")
     print(f"  status='{response.status}', tool_choice='{response.tool_choice}', input_tokens={response.usage.input_tokens}, output_tokens={response.usage.output_tokens}")
@@ -146,14 +152,33 @@ def search():
     return jsonify({"error": str(e)}), 500, {'Content-Type': 'application/json'}
 
   # If no match found, return empty response with correct structure
-  return jsonify({"data": {
-    "query": query
-    ,"answer": output_text
-    ,"status": response.status
-    ,"tool_choice": response.tool_choice
-    ,"input_tokens": response.usage.input_tokens
-    ,"output_tokens": response.usage.output_tokens
-  }}), 200, {'Content-Type': 'application/json'}
+  if format == 'json':
+    return jsonify({"data": {
+      "query": query
+      ,"answer": output_text
+      ,"status": response.status
+      ,"tool_choice": response.tool_choice
+      ,"input_tokens": response.usage.input_tokens
+      ,"output_tokens": response.usage.output_tokens
+    }}), 200, {'Content-Type': 'application/json'}
+  else:
+    output_table = []
+    output_table.append(["Query", query])
+    output_table.append(["Answer", output_text])
+    output_table.append(["Status", response.status])
+    output_table.append(["Tool choice", response.tool_choice])
+    output_table.append(["Input tokens", response.usage.input_tokens])
+    output_table.append(["Output tokens", response.usage.output_tokens])
+    # convert output table to html
+    output_html = "<table border=1>"
+    for row in output_table:
+      output_html += "<tr>"
+      for col in row:
+        output_html += f"<td>{col}</td>"
+      output_html += "</tr>"
+    output_html += "</table>"
+    return output_html, 200, {'Content-Type': 'text/html'}
+    
 
 if __name__ == '__main__':
   app.run(
