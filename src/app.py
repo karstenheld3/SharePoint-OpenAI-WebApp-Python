@@ -1,5 +1,6 @@
 import os
 from flask import Flask, send_from_directory, jsonify, request
+from dataclasses import asdict
 from demodata import DEMO_RESPONSES, CRAWLER_SETTINGS
 from common_openai_functions import *
 from utils import *
@@ -118,53 +119,50 @@ def search():
 
   print(f"  Query: {truncate_string(query,80)}")
 
-  try:
-    params = CoaiResponseParams(
-      model=azure_openai_model_deployment_name
-      ,input=query
-      ,tools=[{ "type": "file_search", "vector_store_ids": [vsid], "max_num_results": 4 }]
-      ,include=["file_search_call.results"]
-      ,max_output_tokens=100
-      ,truncation="auto"
-      ,temperature=0
-    )
+  # try:
+  params = CoaiResponseParams(
+    model=azure_openai_model_deployment_name
+    ,input=query
+    ,tools=[{ "type": "file_search", "vector_store_ids": [vsid], "max_num_results": 4 }]
+    ,include=["file_search_call.results"]
+    ,max_output_tokens=100
+    ,truncation="auto"
+    ,temperature=0
+  )
 
-    search_results, response = get_search_results_using_responses(openai_client, azure_openai_model_deployment_name, query, vsid, 4, 0, 100)
-    output_text = response.output_text
-    response_file_search_tool_call = next((item for item in response.output if item.type == 'file_search_call'), None)
-    search_results = getattr(response_file_search_tool_call, 'results', None)
-    results = []
-    sourceDocLibUrl = "https://[TENANT].sharepoint.com/sites/demo/Shared%20Documents/"
-    for result in search_results:
-        result = {
-            "text": result.text,
-            "source": f"{sourceDocLibUrl}{result.filename}",
-            "metadata": result.attributes
-        }
-        results.append(result)
+  search_results, response = get_search_results_using_responses(openai_client, azure_openai_model_deployment_name, query, vsid, 4, 0, 100)
 
-    data = {
-      "query": query
-      ,"answer": output_text
-      ,"status": response.status
-      ,"tool_choice": response.tool_choice
-      ,"input_tokens": response.usage.input_tokens
-      ,"output_tokens": response.usage.output_tokens
-      ,"search_results": results
+  # Convert search_results to array of sources { "data": "<text>", "source": "<url>", "metadata": { <attributes> } }
+  sources = []
+  sourceDocLibUrl = "https://[TENANT].sharepoint.com/sites/demo/Shared%20Documents/"
+  for result in search_results:
+    source = {
+      "data": result.content[0].text if result.content else "",
+      "source": f"{sourceDocLibUrl}{result.filename}",
+      "metadata": result.attributes
     }
+    sources.append(source)
+  data = {
+    "query": query
+    ,"answer": response.output_text
+    ,"source_markers": ["【", "】"]
+    ,"sources": sources
+  }
 
-    print(f"  Response: {truncate_string(response.output_text,80)}")
-    print(f"  status='{response.status}', tool_choice='{response.tool_choice}', input_tokens={response.usage.input_tokens}, output_tokens={response.usage.output_tokens}")
-  except Exception as e:
-    print(f"    Error: {str(e)}")
-    return jsonify({"error": str(e)}), 500, {'Content-Type': 'application/json'}
+  print(f"  Response: {truncate_string(response.output_text,80)}")
+  print(f"  status='{response.status}', tool_choice='{response.tool_choice}', input_tokens={response.usage.input_tokens}, output_tokens={response.usage.output_tokens}")
+  # except Exception as e:
+  #   print(f"    Error: {str(e)}")
+  #   return jsonify({"error": str(e)}), 500, {'Content-Type': 'application/json'}
 
   # If no match found, return empty response with correct structure
   if format == 'json':
     return jsonify({"data": data}), 200, {'Content-Type': 'application/json'}
   else:
-    output_html = convert_to_nested_html_table(data)
-    return output_html, 200, {'Content-Type': 'text/html'}
+    # For HTML response, convert the data dict to HTML table and wrap in proper HTML document
+    table_html = convert_to_nested_html_table(data)
+    output_html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Search Results</title></head><body>{table_html}</body></html>"""
+    return output_html, 200, {'Content-Type': 'text/html; charset=utf-8'}
     
 
 if __name__ == '__main__':

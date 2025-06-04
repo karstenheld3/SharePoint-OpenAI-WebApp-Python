@@ -30,24 +30,26 @@ def truncate_string(string, max_length):
     return string[:max_length] + "..."
   return string
 
+import html
+
 # Returns a nested html table from the given data (Dict or List or Array)
 def convert_to_nested_html_table(data: Any, max_depth: int = 10) -> str:
   def handle_value(v: Any, depth: int) -> str:
-    if depth >= max_depth: return str(v)
+    if depth >= max_depth: return html.escape(str(v))
     if isinstance(v, dict): return handle_dict(v, depth + 1)
     elif isinstance(v, list): return handle_list(v, depth + 1)
-    else: return str(v)
+    else: return html.escape(str(v))
 
   def handle_list(items: List[Any], depth: int) -> str:
-    if not items or depth >= max_depth: return str(items)
+    if not items or depth >= max_depth: return html.escape(str(items))
     # For simple lists, just return the string representation
-    if not any(isinstance(item, (dict, list)) for item in items): return str(items)
+    if not any(isinstance(item, (dict, list)) for item in items): return html.escape(str(items))
     # For complex lists, create a table
     rows = [f"<tr><td>[{i}]</td><td>{handle_value(item, depth)}</td></tr>" for i, item in enumerate(items)]
     return f"<table border=1>{''.join(rows)}</table>"
   
   def handle_dict(d: Dict[str, Any], depth: int) -> str:
-    if not d or depth >= max_depth: return str(d)
-    rows = [f"<tr><td>{k}</td><td>{handle_value(v, depth)}</td></tr>" for k, v in d.items()]
+    if not d or depth >= max_depth: return html.escape(str(d))
+    rows = [f"<tr><td>{html.escape(str(k))}</td><td>{handle_value(v, depth)}</td></tr>" for k, v in d.items()]
     return f"<table border=1>{''.join(rows)}</table>"
   return handle_value(data, 1)

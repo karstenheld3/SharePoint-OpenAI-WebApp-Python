@@ -119,7 +119,7 @@ def get_search_results_using_responses(client, model, query, vector_store_id, ma
   file_search_call_results = None if file_search_call is None else getattr(file_search_call, 'results', None)
   if  file_search_call_results:
     for result in file_search_call_results:
-        content = CoaiSearchContent(text=result.text, type="text")
+        content = [CoaiSearchContent(text=result.text, type="text")]
         item = CoaiSearchResponse(
           attributes=result.attributes
           ,content=content
