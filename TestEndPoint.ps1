@@ -255,7 +255,7 @@ $json = $response[2]
 if ($status -ne 200) { Write-Host "  ERROR! Expected status 200 but got $status" -ForegroundColor White -BackgroundColor Red
 } elseif ($mime -ne $expectedMimeType) { Write-Host "  ERROR! Expected MIME type '$expectedMimeType' but got '$mime'" -ForegroundColor White -BackgroundColor Red
 } elseif (-not $json.data.answer -or -not $json.data.answer.ToLower().Contains($answer.ToLower())) { Write-Host "  FAIL: Response does not contain expected answer '$($answer)' from demodata.py" -ForegroundColor White -BackgroundColor Red
-} else { Write-Host "  PASS: Response matches expected answer '$($json.data.answer)'" -ForegroundColor Green }
+} else { Write-Host "  PASS: Response matches expected answer '$($json.data.answer.Substring(0,40))...'" -ForegroundColor Green }
 
 
 $query = "What is HMS?"
@@ -270,7 +270,7 @@ $json = $response[2]
 if ($status -ne 200) { Write-Host "  ERROR! Expected status 200 but got $status" -ForegroundColor White -BackgroundColor Red
 } elseif ($mime -ne $expectedMimeType) { Write-Host "  ERROR! Expected MIME type '$expectedMimeType' but got '$mime'" -ForegroundColor White -BackgroundColor Red
 } elseif (-not $json.data.answer -or $json.data.answer.ToLower().Contains($wrongAnswer.ToLower())) { Write-Host "  FAIL: Response contains '$($wrongAnswer)'" -ForegroundColor White -BackgroundColor Red
-} else { Write-Host "  PASS: Response returned '$($json.data.answer)'" -ForegroundColor Green }
+} else { Write-Host "  PASS: Response returned '$($json.data.answer.Substring(0,40))...'" -ForegroundColor Green }
 
 
 Write-Host "`nTest Case $($testCaseNumber): POST /query with empty query should return empty response JSON"
