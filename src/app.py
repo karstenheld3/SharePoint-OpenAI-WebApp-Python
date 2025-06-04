@@ -1,9 +1,8 @@
-from typing import Dict, Any, List
 import os
-import time
 from flask import Flask, send_from_directory, jsonify, request
 from demodata import DEMO_RESPONSES, CRAWLER_SETTINGS
-from openai_backendtools import create_openai_client, create_azure_openai_client
+from openai_service import *
+from utils import *
 
 app = Flask(__name__)
 
@@ -29,46 +28,6 @@ def init_openai_client():
 # Initialize the client at module level
 init_openai_client()
 
-# Retries the given function on rate limit errors
-def retry_on_openai_errors(fn, indentation=0, retries=5, backoff_seconds=10):
-  for attempt in range(retries):
-    try:
-      return fn()
-    except Exception as e:
-      # Only retry on rate limit errors
-      if not (hasattr(e, 'type') and e.type == 'rate_limit_error'):
-        raise e
-      if attempt == retries - 1:  # Last attempt
-        raise e
-      print(f"{' '*indentation}Rate limit reached, retrying in {backoff_seconds} seconds... (attempt {attempt + 2} of {retries})")
-      time.sleep(backoff_seconds)
-
-def truncate_string(string, max_length):
-  if len(string) > max_length:
-    return string[:max_length] + "..."
-  return string
-
-# Returns a nested html table from the given data (Dict or List or Array)
-def convert_to_nested_html_table(data: Any, max_depth: int = 10) -> str:
-  def handle_value(v: Any, depth: int) -> str:
-    if depth >= max_depth: return str(v)
-    if isinstance(v, dict): return handle_dict(v, depth + 1)
-    elif isinstance(v, list): return handle_list(v, depth + 1)
-    else: return str(v)
-
-  def handle_list(items: List[Any], depth: int) -> str:
-    if not items or depth >= max_depth: return str(items)
-    # For simple lists, just return the string representation
-    if not any(isinstance(item, (dict, list)) for item in items): return str(items)
-    # For complex lists, create a table
-    rows = [f"<tr><td>[{i}]</td><td>{handle_value(item, depth)}</td></tr>" for i, item in enumerate(items)]
-    return f"<table border=1>{''.join(rows)}</table>"
-  
-  def handle_dict(d: Dict[str, Any], depth: int) -> str:
-    if not d or depth >= max_depth: return str(d)
-    rows = [f"<tr><td>{k}</td><td>{handle_value(v, depth)}</td></tr>" for k, v in d.items()]
-    return f"<table border=1>{''.join(rows)}</table>"
-  return handle_value(data, 1)
 
 
 @app.route('/')

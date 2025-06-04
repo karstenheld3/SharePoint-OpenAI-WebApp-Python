@@ -4,54 +4,7 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 import openai
 
 # ----------------------------------------------------- START: Utilities ------------------------------------------------------
-def create_openai_client():
-  api_key = os.environ.get('OPENAI_API_KEY')
-  return openai.OpenAI(api_key=api_key)
 
-# Create an Azure OpenAI client using either managed identity or API key authentication.
-def create_azure_openai_client(use_key_authentication=False):
-  endpoint = os.environ.get('AZURE_OPENAI_ENDPOINT')
-  api_version = os.environ.get('AZURE_OPENAI_API_VERSION')
-  
-  if use_key_authentication:
-    # Use API key authentication
-    api_key = os.environ.get('AZURE_OPENAI_API_KEY')
-    # Create client with API key
-    return openai.AzureOpenAI(
-      api_version=api_version,
-      azure_endpoint=endpoint,
-      api_key=api_key
-    )
-  else:
-    # Use managed identity or service principal authentication (whatever is configured in the environment variables)
-    cred = DefaultAzureCredential()
-    token_provider = get_bearer_token_provider(cred, "https://cognitiveservices.azure.com/.default")
-    # Create client with token provider
-    return openai.AzureOpenAI( api_version=api_version, azure_endpoint=endpoint, azure_ad_token_provider=token_provider )
-
-# Format a file size in bytes into a human-readable string
-def format_filesize(num_bytes):
-  if not num_bytes: return ''
-  for unit in ['B','KB','MB','GB','TB']:
-    if num_bytes < 1024: return f"{num_bytes:.2f} {unit}"
-    num_bytes /= 1024
-  return f"{num_bytes:.2f} PB"
-
-# Format timestamp into a human-readable string (RFC3339 with ' ' instead of 'T')
-def format_timestamp(ts):
-  return ('' if not ts else datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S'))
-
-def log_function_header(name):
-  start_time = datetime.datetime.now()
-  print(f"[{start_time.strftime('%Y-%m-%d %H:%M:%S')}] START: {name}...")
-  return start_time
-
-def log_function_footer(name, start_time):
-  end_time = datetime.datetime.now()
-  secs = (end_time - start_time).total_seconds()
-  parts = [(int(secs // 3600), 'hour'), (int((secs % 3600) // 60), 'min'), (int(secs % 60), 'sec')]
-  total_time = ', '.join(f"{val} {unit}{'s' if val != 1 else ''}" for val, unit in parts if val > 0)
-  print(f"[{end_time.strftime('%Y-%m-%d %H:%M:%S')}] END: {name} ({total_time}).")
 
 def get_all_assistant_vector_store_ids(client):
   all_assistants = get_all_assistants(client)
