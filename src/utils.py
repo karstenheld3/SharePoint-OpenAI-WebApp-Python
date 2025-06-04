@@ -53,3 +53,15 @@ def convert_to_nested_html_table(data: Any, max_depth: int = 10) -> str:
     rows = [f"<tr><td>{html.escape(str(k))}</td><td>{handle_value(v, depth)}</td></tr>" for k, v in d.items()]
     return f"<table border=1>{''.join(rows)}</table>"
   return handle_value(data, 1)
+
+def log_function_header(name):
+  start_time = datetime.datetime.now()
+  print(f"[{start_time.strftime('%Y-%m-%d %H:%M:%S')}] START: {name}...")
+  return start_time
+
+def log_function_footer(name, start_time):
+  end_time = datetime.datetime.now()
+  secs = (end_time - start_time).total_seconds()
+  parts = [(int(secs // 3600), 'hour'), (int((secs % 3600) // 60), 'min'), (int(secs % 60), 'sec')]
+  total_time = ', '.join(f"{val} {unit}{'s' if val != 1 else ''}" for val, unit in parts if val > 0)
+  print(f"[{end_time.strftime('%Y-%m-%d %H:%M:%S')}] END: {name} ({total_time}).")

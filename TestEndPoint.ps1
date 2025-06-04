@@ -243,26 +243,35 @@ if ($status -eq 405) {
     Write-Host "  ERROR! Expected status 405 but got $status" -ForegroundColor white -backgroundColor Red
 }
 
-Write-Host "`nTest Case $($testCaseNumber): POST /query with 'lorem ipsum' should return correct response from demodata.py"
+$query = "lorem ipsum"
+Write-Host "`nTest Case $($testCaseNumber): POST /query with '$($query)' should return correct response from demodata.py"
 $testCaseNumber++
-$body = @{ data = @{ query = "lorem ipsum"; args = @{} }; auth = @{ oid = ""; groups = @() } }
-
-$body.data.query = "lorem ipsum"
+$body = @{ data = @{ query = $query; args = @{} }; auth = @{ oid = ""; groups = @() } }
+$answer = "Lorem ipsum dolor sit amet"
 $response = Invoke-EndpointTest -endpoint "/query" -method "POST" -body $body
 $status = $response[0]
 $mime = if (-not $response[1]) { "[Empty]" } else { $response[1] }
 $json = $response[2]
+if ($status -ne 200) { Write-Host "  ERROR! Expected status 200 but got $status" -ForegroundColor White -BackgroundColor Red
+} elseif ($mime -ne $expectedMimeType) { Write-Host "  ERROR! Expected MIME type '$expectedMimeType' but got '$mime'" -ForegroundColor White -BackgroundColor Red
+} elseif (-not $json.data.answer -or -not $json.data.answer.ToLower().Contains($answer.ToLower())) { Write-Host "  FAIL: Response does not contain expected answer '$($answer)' from demodata.py" -ForegroundColor White -BackgroundColor Red
+} else { Write-Host "  PASS: Response matches expected answer '$($json.data.answer)'" -ForegroundColor Green }
 
-if ($status -ne 200) {
-    Write-Host "  ERROR! Expected status 200 but got $status" -ForegroundColor White -BackgroundColor Red
 
-} elseif ($mime -ne $expectedMimeType) {
-    Write-Host "  ERROR! Expected MIME type '$expectedMimeType' but got '$mime'" -ForegroundColor White -BackgroundColor Red
-} elseif (-not $json.data.answer -or -not $json.data.answer.StartsWith("Lorem ipsum dolor sit amet")) {
-    Write-Host "  FAIL: Response does not match expected lorem ipsum answer from demodata.py" -ForegroundColor White -BackgroundColor Red
-} else {
-    Write-Host "  PASS: Response matches expected lorem ipsum answer" -ForegroundColor Green
-}
+$query = "What is HMS?"
+$wrongAnswer = "N/A"
+Write-Host "`nTest Case $($testCaseNumber): POST /query with '$($query)' should return correct response from demodata.py"
+$testCaseNumber++
+$body = @{ data = @{ query = $query; args = @{} }; auth = @{ oid = ""; groups = @() } }
+$response = Invoke-EndpointTest -endpoint "/query" -method "POST" -body $body
+$status = $response[0]
+$mime = if (-not $response[1]) { "[Empty]" } else { $response[1] }
+$json = $response[2]
+if ($status -ne 200) { Write-Host "  ERROR! Expected status 200 but got $status" -ForegroundColor White -BackgroundColor Red
+} elseif ($mime -ne $expectedMimeType) { Write-Host "  ERROR! Expected MIME type '$expectedMimeType' but got '$mime'" -ForegroundColor White -BackgroundColor Red
+} elseif (-not $json.data.answer -or $json.data.answer.ToLower().Contains($wrongAnswer.ToLower())) { Write-Host "  FAIL: Response contains '$($wrongAnswer)'" -ForegroundColor White -BackgroundColor Red
+} else { Write-Host "  PASS: Response returned '$($json.data.answer)'" -ForegroundColor Green }
+
 
 Write-Host "`nTest Case $($testCaseNumber): POST /query with empty query should return empty response JSON"
 $testCaseNumber++
@@ -272,16 +281,10 @@ $status = $response[0]
 $mime = if (-not $response[1]) { "[Empty]" } else { $response[1] }
 $json = $response[2]
 
-if ($status -ne 200) {
-    Write-Host "  ERROR! Expected status 200 but got $status" -ForegroundColor White -BackgroundColor Red
-
-} elseif ($mime -ne $expectedMimeType) {
-    Write-Host "  ERROR! Expected MIME type '$expectedMimeType' but got '$mime'" -ForegroundColor White -BackgroundColor Red
-} elseif ($json.data.answer) {
-    Write-Host "  FAIL: Empty query should return empty response" -ForegroundColor White -BackgroundColor Red
-} else {
-    Write-Host "  PASS: Empty query returns empty response" -ForegroundColor Green
-}
+if ($status -ne 200) { Write-Host "  ERROR! Expected status 200 but got $status" -ForegroundColor White -BackgroundColor Red
+} elseif ($mime -ne $expectedMimeType) { Write-Host "  ERROR! Expected MIME type '$expectedMimeType' but got '$mime'" -ForegroundColor White -BackgroundColor Red
+} elseif ($json.data.answer) { Write-Host "  FAIL: Empty query should return empty response" -ForegroundColor White -BackgroundColor Red
+} else { Write-Host "  PASS: Empty query returns empty response" -ForegroundColor Green }
 
 Write-Host "`nTest Case $($testCaseNumber): POST /query with empty payload should return 400 - Bad Request"
 $testCaseNumber++

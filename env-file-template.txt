@@ -12,6 +12,10 @@ AZURE_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxx
 AZURE_OPENAI_MODEL_DEPLOYMENT_NAME=gpt-4o-mini
 AZURE_OPENAI_API_VERSION=2025-04-01-preview
 
+# Used by /query endpoint temporarely until routing logic and source handling is implemented
+DEFAULT_SEARCH_VECTOR_STORE_ID=vs_xxxxxxxxxxxxxxxx
+DEFAULT_SHAREPOINT_SOURCE_URL=https://<your_tenant>.sharepoint.com/sites/<your_site>/Shared%20Documents/
+
 # Azure Deployment
 AZURE_SUBSCRIPTION_ID=cccccccc-cccc-cccc-cccc-cccccccccccc
 AZURE_RESOURCE_GROUP=my-resourcegroup-2342934563
