@@ -1,7 +1,7 @@
 import os
 from flask import Flask, send_from_directory, jsonify, request
 from demodata import DEMO_RESPONSES, CRAWLER_SETTINGS
-from openai_service import *
+from common_openai_functions import *
 from utils import *
 
 app = Flask(__name__)
@@ -119,7 +119,7 @@ def search():
   print(f"  Query: {truncate_string(query,80)}")
 
   try:
-    response = retry_on_openai_errors(lambda: openai_client.responses.create(
+    params = CoaiResponseParams(
       model=azure_openai_model_deployment_name
       ,input=query
       ,tools=[{ "type": "file_search", "vector_store_ids": [vsid], "max_num_results": 4 }]
@@ -127,7 +127,9 @@ def search():
       ,max_output_tokens=100
       ,truncation="auto"
       ,temperature=0
-    ), indentation=4)
+    )
+
+    search_results, response = get_search_results_using_responses(openai_client, azure_openai_model_deployment_name, query, vsid, 4, 0, 100)
     output_text = response.output_text
     response_file_search_tool_call = next((item for item in response.output if item.type == 'file_search_call'), None)
     search_results = getattr(response_file_search_tool_call, 'results', None)
