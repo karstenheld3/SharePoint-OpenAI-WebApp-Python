@@ -1,3 +1,4 @@
+from typing import Dict, Any, List
 import os
 import time
 from flask import Flask, send_from_directory, jsonify, request
@@ -46,6 +47,28 @@ def truncate_string(string, max_length):
   if len(string) > max_length:
     return string[:max_length] + "..."
   return string
+
+# Returns a nested html table from the given data (Dict or List or Array)
+def convert_to_nested_html_table(data: Any, max_depth: int = 10) -> str:
+  def handle_value(v: Any, depth: int) -> str:
+    if depth >= max_depth: return str(v)
+    if isinstance(v, dict): return handle_dict(v, depth + 1)
+    elif isinstance(v, list): return handle_list(v, depth + 1)
+    else: return str(v)
+
+  def handle_list(items: List[Any], depth: int) -> str:
+    if not items or depth >= max_depth: return str(items)
+    # For simple lists, just return the string representation
+    if not any(isinstance(item, (dict, list)) for item in items): return str(items)
+    # For complex lists, create a table
+    rows = [f"<tr><td>[{i}]</td><td>{handle_value(item, depth)}</td></tr>" for i, item in enumerate(items)]
+    return f"<table border=1>{''.join(rows)}</table>"
+  
+  def handle_dict(d: Dict[str, Any], depth: int) -> str:
+    if not d or depth >= max_depth: return str(d)
+    rows = [f"<tr><td>{k}</td><td>{handle_value(v, depth)}</td></tr>" for k, v in d.items()]
+    return f"<table border=1>{''.join(rows)}</table>"
+  return handle_value(data, 1)
 
 
 @app.route('/')
@@ -115,6 +138,9 @@ def query():
     'sources': []
   }}), 200, {'Content-Type': 'application/json'}
 
+
+# https://platform.openai.com/docs/guides/tools-file-search
+# https://github.com/openai/openai-python/blob/main/src/openai/resources/responses/responses.py
 @app.route('/search')
 def search():
   # Get query parameters
@@ -137,13 +163,34 @@ def search():
     response = retry_on_openai_errors(lambda: openai_client.responses.create(
       model=azure_openai_model_deployment_name
       ,input=query
-      ,tools=[{ "type": "file_search", "vector_store_ids": [vsid] }]
+      ,tools=[{ "type": "file_search", "vector_store_ids": [vsid], "max_num_results": 4 }]
       ,include=["file_search_call.results"]
+      ,max_output_tokens=100
+      ,truncation="auto"
+      ,temperature=0
     ), indentation=4)
     output_text = response.output_text
     response_file_search_tool_call = next((item for item in response.output if item.type == 'file_search_call'), None)
     search_results = getattr(response_file_search_tool_call, 'results', None)
-    
+    results = []
+    sourceDocLibUrl = "https://[TENANT].sharepoint.com/sites/demo/Shared%20Documents/"
+    for result in search_results:
+        result = {
+            "text": result.text,
+            "source": f"{sourceDocLibUrl}{result.filename}",
+            "metadata": result.attributes
+        }
+        results.append(result)
+
+    data = {
+      "query": query
+      ,"answer": output_text
+      ,"status": response.status
+      ,"tool_choice": response.tool_choice
+      ,"input_tokens": response.usage.input_tokens
+      ,"output_tokens": response.usage.output_tokens
+      ,"search_results": results
+    }
 
     print(f"  Response: {truncate_string(response.output_text,80)}")
     print(f"  status='{response.status}', tool_choice='{response.tool_choice}', input_tokens={response.usage.input_tokens}, output_tokens={response.usage.output_tokens}")
@@ -153,30 +200,9 @@ def search():
 
   # If no match found, return empty response with correct structure
   if format == 'json':
-    return jsonify({"data": {
-      "query": query
-      ,"answer": output_text
-      ,"status": response.status
-      ,"tool_choice": response.tool_choice
-      ,"input_tokens": response.usage.input_tokens
-      ,"output_tokens": response.usage.output_tokens
-    }}), 200, {'Content-Type': 'application/json'}
+    return jsonify({"data": data}), 200, {'Content-Type': 'application/json'}
   else:
-    output_table = []
-    output_table.append(["Query", query])
-    output_table.append(["Answer", output_text])
-    output_table.append(["Status", response.status])
-    output_table.append(["Tool choice", response.tool_choice])
-    output_table.append(["Input tokens", response.usage.input_tokens])
-    output_table.append(["Output tokens", response.usage.output_tokens])
-    # convert output table to html
-    output_html = "<table border=1>"
-    for row in output_table:
-      output_html += "<tr>"
-      for col in row:
-        output_html += f"<td>{col}</td>"
-      output_html += "</tr>"
-    output_html += "</table>"
+    output_html = convert_to_nested_html_table(data)
     return output_html, 200, {'Content-Type': 'text/html'}
     
 
