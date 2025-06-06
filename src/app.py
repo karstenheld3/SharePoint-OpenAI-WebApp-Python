@@ -9,24 +9,29 @@ app = Flask(__name__)
 
 # Global variables
 openai_client = None
+
+openai_service_type = os.getenv("OPENAI_SERVICE_TYPE", "openai")
+openai_api_key = os.environ.get('OPENAI_API_KEY')
+
+azure_openai_endpoint = os.environ.get('AZURE_OPENAI_ENDPOINT')
+azure_openai_api_version = os.environ.get('AZURE_OPENAI_API_VERSION')
+azure_openai_api_key = os.environ.get('AZURE_OPENAI_API_KEY')
+azure_openai_use_key_authentication = os.getenv("AZURE_OPENAI_USE_KEY_AUTHENTICATION", "false").lower() in ['true']
 azure_openai_model_deployment_name = os.getenv("AZURE_OPENAI_MODEL_DEPLOYMENT_NAME", "gpt-4o-mini")
+
 default_search_vector_store_id = os.getenv("DEFAULT_SEARCH_VECTOR_STORE_ID", "<your_default_vector_store_id>")
 default_sharepoint_source_url = os.getenv("DEFAULT_SHAREPOINT_SOURCE_URL", "https://<your_tenant>.sharepoint.com/sites/<your_site>/Shared%20Documents/")
-
 
 # Initialize OpenAI client
 def init_openai_client():
   global openai_client
   try:
-    openai_service_type = os.getenv("OPENAI_SERVICE_TYPE", "openai")
-    azure_openai_use_key_authentication = os.getenv("AZURE_OPENAI_USE_KEY_AUTHENTICATION", "false").lower() in ['true']
-
     if openai_service_type == "openai":
-      openai_client = create_openai_client()
+      openai_client = create_openai_client(openai_api_key)
     elif openai_service_type == "azure_openai":
-      openai_client = create_azure_openai_client(azure_openai_use_key_authentication)
+      openai_client = create_azure_openai_client(azure_openai_endpoint, azure_openai_api_version, azure_openai_api_key, azure_openai_use_key_authentication)
   except Exception as e:
-    print(f"Error initializing OpenAI client: {str(e)}")
+    print(f"Error initializing OpenAI client of type '{openai_service_type}': {str(e)}")
     raise
 
 # Initialize the client at module level

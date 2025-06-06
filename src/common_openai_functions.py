@@ -63,31 +63,19 @@ class CoaiResponseParams:
 
 
 
-def create_openai_client():
-  api_key = os.environ.get('OPENAI_API_KEY')
+def create_openai_client(api_key):
   return openai.OpenAI(api_key=api_key)
 
 # Create an Azure OpenAI client using either managed identity or API key authentication.
-def create_azure_openai_client(use_key_authentication=False):
-  endpoint = os.environ.get('AZURE_OPENAI_ENDPOINT')
-  api_version = os.environ.get('AZURE_OPENAI_API_VERSION')
-  
+def create_azure_openai_client(azure_endpoint, api_version, api_key, use_key_authentication):  
   if use_key_authentication:
-    # Use API key authentication
-    api_key = os.environ.get('AZURE_OPENAI_API_KEY')
-    # Create client with API key
-    return openai.AzureOpenAI(
-      api_version=api_version,
-      azure_endpoint=endpoint,
-      api_key=api_key
-    )
+    return openai.AzureOpenAI( api_version=api_version, azure_endpoint=azure_endpoint, api_key=api_key)
   else:
     # Use managed identity or service principal authentication (whatever is configured in the environment variables)
     cred = DefaultAzureCredential()
     token_provider = get_bearer_token_provider(cred, "https://cognitiveservices.azure.com/.default")
     # Create client with token provider
-    return openai.AzureOpenAI( api_version=api_version, azure_endpoint=endpoint, azure_ad_token_provider=token_provider )
-
+    return openai.AzureOpenAI( api_version=api_version, azure_endpoint=azure_endpoint, azure_ad_token_provider=token_provider )
 
 # Retries the given function on rate limit errors
 def retry_on_openai_errors(fn, indentation=0, retries=5, backoff_seconds=10):
